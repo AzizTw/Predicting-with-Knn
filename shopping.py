@@ -8,6 +8,7 @@ from datetime import datetime
 
 TEST_SIZE = 0.4
 
+
 def main():
 
     # Check command-line arguments
@@ -17,7 +18,7 @@ def main():
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
     X_train, X_test, y_train, y_test = train_test_split(
-        evidence, labels, test_size=TEST_SIZE, random_state=0
+        evidence, labels, test_size=TEST_SIZE
     )
 
     # Train model and make predictions
@@ -31,37 +32,56 @@ def main():
     print(f"True Positive Rate: {100 * sensitivity:.2f}%")
     print(f"True Negative Rate: {100 * specificity:.2f}%")
 
+
 def load_data(filename):
 
     # Load the data
     df = pandas.read_csv(filename)
 
-    #The titles that need to be converted to integers
-    to_int = ['Administrative', 'Informational', 'ProductRelated',
-            'OperatingSystems', 'Browser', 'Region', 'TrafficType',
-            'Weekend', 'Revenue']
+    # The titles that need to be converted to integers
+    to_int = [
+        "Administrative",
+        "Informational",
+        "ProductRelated",
+        "OperatingSystems",
+        "Browser",
+        "Region",
+        "TrafficType",
+        "Weekend",
+        "Revenue",
+    ]
 
-    #The titles that need to be converted to floats        
-    to_float = ['Administrative_Duration', 'Informational_Duration',
-            'ProductRelated_Duration', 'BounceRates', 'ExitRates',
-            'PageValues', 'SpecialDay']
+    # The titles that need to be converted to floats
+    to_float = [
+        "Administrative_Duration",
+        "Informational_Duration",
+        "ProductRelated_Duration",
+        "BounceRates",
+        "ExitRates",
+        "PageValues",
+        "SpecialDay",
+    ]
 
-    # Convert 
-    df[to_int] = df[to_int].applymap(int)
-    df[to_float] = df[to_float].applymap(float)
-    
-    #Convert the visitor type column to 0 or 1
-    df["VisitorType"] = df["VisitorType"].apply(lambda x: 1 if x == "Returning_Visitor" else 0)
+    # Convert
+    df[to_int] = df[to_int].astype(int)
+    df[to_float] = df[to_float].astype(float)
 
-    #Convert the month column to an index from 0 to 11
-    df["Month"] = df["Month"].apply(lambda old_month: datetime.strptime(old_month[0:3], "%b").month - 1)
+    # Convert the visitor type column to 0 or 1
+    df["VisitorType"] = df["VisitorType"].apply(
+        lambda x: 1 if x == "Returning_Visitor" else 0
+    )
 
-    evidences = []
-    labels = []  
-    # Iterate through the dataframe, adding each row to the evidences list
-    for row in df.itertuples():
-        evidences.append([cell for cell in row[1:-1]])
-        labels.append(row.Revenue)
+    # Making month column consistent
+    df["Month"] = df["Month"].apply(lambda x: x.replace("June", "Jun"))
+
+    # Convert the month column to an index from 0 to 11
+    df["Month"] = df["Month"].apply(
+        lambda old_month: datetime.strptime(old_month, "%b").month - 1
+    )
+
+    evidences = df.iloc[:, :-1]
+    labels = df["Revenue"]
+
     return evidences, labels
 
 
@@ -72,7 +92,7 @@ def train_model(evidence, labels):
 
 
 def evaluate(labels, predictions):
-    
+
     # using confusion matrix to calculate the sensitivity and specificity
     matrix = confusion_matrix(labels, predictions)
 
@@ -80,6 +100,7 @@ def evaluate(labels, predictions):
     specificity = matrix[0][0] / (matrix[0][0] + matrix[0][1])
 
     return sensitivity, specificity
+
 
 if __name__ == "__main__":
     main()
